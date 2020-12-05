@@ -17,7 +17,7 @@ loop(Size,Values)->
         if length(Values) < Size ->
             io:format("Added ~p~n",[Value]), loop(Size,[Value | Values]);
         true ->
-            io:format("Buffer is full!~n"),loop(Size,[Values])
+            io:format("Buffer is full!~n"),loop(Size,Values)
         end;
 
       {consume,Client}   -> 

@@ -20,7 +20,12 @@ loop(Size,Values)->
             io:format("Buffer is full!~n"),loop(Size,[Values])
         end;
 
-      {consume,Client}   -> io:format("Removed ~p~n",[hd(Values)]),Client ! hd(Values) , loop(Size,tl(Values));
+      {consume,Client}   -> 
+          if length(Values) == 0 ->
+                io:format("Buffer is empty!~n"), loop(Size,Values);
+        true ->
+          io:format("Removed ~p~n",[hd(Values)]),Client ! hd(Values) , loop(Size,tl(Values))
+        end;
     
       read -> io:format("All Elements ~p~n",[Values]),loop(Size,Values);
     

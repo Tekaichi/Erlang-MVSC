@@ -1,25 +1,26 @@
 -module(consumer).
 
--export([start/2,consumer/2]).
+-export([start/1,consumer/1]).
 
-start(Number,Buffer) ->
+start(Number) ->
     
-    spawn(?MODULE,consumer,[Number,Buffer]).
+    spawn(?MODULE,consumer,[Number]).
 
 
-consumer(Number,Buffer)->
+consumer(Number)->
     io:format("Consumer was initialised!~n"),
-    loop(Number,Buffer).
+    loop(Number).
 
 
-loop(Number,Buffer)-> 
+loop(Number)-> 
     %If Number == 0, stop consuming.
     if Number > 0 ->
-    Buffer ! {consume,self()},
+    bounded_buffer ! {consume,self()},
         receive 
-            {reply,Value} -> io:format("Consumed ~p~n",[Value]),loop(Number-1,Buffer);
-            Msg -> io:format("Could not consume. Got: ~p~n",[Msg]),loop(Number,Buffer)
-        end
+            {reply,Value} -> io:format("Consumed ~p~n",[Value]),loop(Number-1);
+            Msg -> io:format("Could not consume. Got: ~p~n",[Msg]),loop(Number)
+        end;
+    true -> io:format("Done consuming")
     end.
     
     

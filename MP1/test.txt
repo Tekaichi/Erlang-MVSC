@@ -1,8 +1,11 @@
 
 {ok,buffer} = c(buffer),
-C1 = buffer:start(2),
-C1 ! {produce,2},
-C1 ! {produce,3},
-C1 ! {produce,4},
-C1 ! read.
-C1 !{consume,self()}.
+buffer:start(5).
+
+{ok,producer} = c(producer),
+producer:start(8).
+{ok,consumer} =c(consumer),
+consumer:start(8).
+bounded_buffer ! read.
+bounded_buffer ! read.
+

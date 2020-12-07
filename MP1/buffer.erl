@@ -3,7 +3,7 @@
 -export([start/1,bounded_buffer/1]).
 
 start(Size) ->
-    spawn(?MODULE,bounded_buffer,[Size]).
+    register(bounded_buffer,spawn(?MODULE,bounded_buffer,[Size])).
 
 
 %Right now is a LIFO buffer.
@@ -17,12 +17,12 @@ loop(Size,Values)->
         if length(Values) < Size ->
             io:format("Added ~p~n",[Value]), Client ! {reply,Value},loop(Size,[Value | Values]);
         true ->
-            io:format("Buffer is full!~n"),loop(Size,Values)
+            io:format("Buffer is full!~n"),Client ! full, loop(Size,Values)
         end;
 
       {consume,Client} -> 
           if length(Values) == 0 ->
-                io:format("Buffer is empty!~n"), loop(Size,Values);
+                io:format("Buffer is empty!~n"), Client! empty, loop(Size,Values);
         true ->
           io:format("Removed ~p~n",[hd(Values)]),Client !  {reply,hd(Values)} , loop(Size,tl(Values))
         end;

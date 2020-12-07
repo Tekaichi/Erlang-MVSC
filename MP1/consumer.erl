@@ -1,17 +1,21 @@
 -module(consumer).
 
--export([start/1,consumer/1]).
+-export([start/1,consumer_init/1]).
 
+%Start function.
+%Spawns the consume that will consume Number values.
 start(Number) ->
     
-    spawn(?MODULE,consumer,[Number]).
+    spawn(?MODULE,consumer_init,[Number]).
 
 
-consumer(Number)->
+consumer_init(Number)->
     io:format("Consumer was initialised!~n"),
     loop(Number).
 
-
+%Main loop of the consumer.
+%Consumes until the bounded buffer sends a value. (If it is not empty)
+%After the bounded buffer accepts the value, the producer moves one iteration.
 loop(Number)-> 
     %If Number == 0, stop consuming.
     if Number > 0 ->

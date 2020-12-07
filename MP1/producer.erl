@@ -2,6 +2,8 @@
 
 -export([start/1,producer_init/1]).
 
+%Start function.
+%Spawns the producer that will produce Number values.
 start(Number) ->
     
     spawn(?MODULE,producer_init,[Number]).
@@ -12,8 +14,11 @@ producer_init(Number)->
     loop(Number).
 
 
+%Main loop of the producer.
+%Produces the same value until the bounded buffer accepts its. (If it is not full)
+%After the bounded buffer accepts the value, the producer moves one iteration.
 loop(Number)-> 
-    %If Number == 0, stop consuming.
+    
     if Number > 0 ->
     bounded_buffer ! {produce,Number,self()},
         receive 

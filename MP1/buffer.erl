@@ -3,7 +3,7 @@
 -export([start/1,bounded_buffer/1]).
 
 start(Size) ->
-    register(bounded_buffer,spawn(?MODULE,bounded_buffer,[Size])).
+    register(bounded_buffer, spawn(?MODULE,bounded_buffer,[Size])).
 
 
 %Right now is a LIFO buffer.

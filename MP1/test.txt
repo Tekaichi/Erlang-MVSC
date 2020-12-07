@@ -1,6 +1,8 @@
 
-{ok,buffer} = c(buffer),
-buffer:start(5).
+{ok,buffer} = c(buffer).
+
+{ok,monitor} = c(monitor),
+monitor:init().
 
 {ok,producer} = c(producer),
 producer:start(8).

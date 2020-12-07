@@ -1,15 +1,14 @@
 
-{ok,buffer} = c(buffer).
-
-{ok,monitor} = c(monitor),
-monitor:init().
-
+monitor:init(5).
 exit(whereis(bounded_buffer), stop).
+producer:start(5).
+bounded_buffer ! read.
+consumer:start(3).
+producer:start(5).
+consumer:start(6).
+bounded_buffer ! read.
+bounded_buffer ! read.
+bounded_buffer ! read.
 
-{ok,producer} = c(producer),
-producer:start(8).
-{ok,consumer} =c(consumer),
-consumer:start(8).
-bounded_buffer ! read.
-bounded_buffer ! read.
+//Leaves one element in the buffer.
 

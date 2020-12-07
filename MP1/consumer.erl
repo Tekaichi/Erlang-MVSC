@@ -15,7 +15,7 @@ consumer_init(Number)->
 
 %Main loop of the consumer.
 %Consumes until the bounded buffer sends a value. (If it is not empty)
-%After the bounded buffer accepts the value, the producer moves one iteration.
+%After the bounded buffer accepts the value, the producer moves to the next iteration.
 loop(Number)-> 
     %If Number == 0, stop consuming.
     if Number > 0 ->

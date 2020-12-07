@@ -16,7 +16,7 @@ producer_init(Number)->
 
 %Main loop of the producer.
 %Produces the same value until the bounded buffer accepts its. (If it is not full)
-%After the bounded buffer accepts the value, the producer moves one iteration.
+%After the bounded buffer accepts the value, the producer moves to the next iteration.
 loop(Number)-> 
     
     if Number > 0 ->

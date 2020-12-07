@@ -23,7 +23,7 @@ loop(Number)->
     bounded_buffer ! {produce,Number,self()},
         receive 
             {reply,Value} -> io:format("Produced ~p~n",[Value]),loop(Number-1);
-            Msg -> io:format("Could not produce. Got: ~p~n",[Msg]),loop(Number) 
+            Msg -> io:format("Could not produce. Got: ~p~n",[Msg]),loop(Number)  %Something went wrong, try again.
         end;
     true -> io:format("Done producing")
     end.

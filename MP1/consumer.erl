@@ -22,7 +22,7 @@ loop(Number)->
     bounded_buffer ! {consume,self()},
         receive 
             {reply,Value} -> io:format("Consumed ~p~n",[Value]),loop(Number-1);
-            Msg -> io:format("Could not consume. Got: ~p~n",[Msg]),loop(Number)
+            Msg -> io:format("Could not consume. Got: ~p~n",[Msg]),loop(Number)  %Something went wrong, try again.
         end;
     true -> io:format("Done consuming")
     end.

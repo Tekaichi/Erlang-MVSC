@@ -5,6 +5,7 @@
 -import(buffer,[start/1]).
 
 
+%Starts the monitor.
 init(Size) ->
     
    spawn(?MODULE,monitor_init,[Size]).

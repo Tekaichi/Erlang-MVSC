@@ -1,0 +1,4 @@
+(Some) Keypoints:
+Gen Server
+State Machine
+Id nodes are sequential

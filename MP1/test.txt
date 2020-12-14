@@ -1,3 +1,4 @@
+//The Monitor starts the buffer.
 
 monitor:init(5).
 exit(whereis(bounded_buffer), stop).

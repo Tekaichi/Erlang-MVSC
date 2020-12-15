@@ -1,4 +1,11 @@
+Assumptions
+• FIFO channels
+• Each process has an unique id
+• Process ids are totally ordered
+• When designing an election algorithm one may postulate that the process with the largest (smallest) id must win the election
+• Overall ideia: The algorithm computes the largest ID and informs all other processes, then that process becomes the leader
+
 (Some) Keypoints:
-Gen Server
+Gen Server -> Supervisor -> Starts all nodes sequentally
 State Machine
 Id nodes are sequential

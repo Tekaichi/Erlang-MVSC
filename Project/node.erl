@@ -1,6 +1,7 @@
 -module(node).
 -import(math,[pow/2]).
 
+-export([start/2,init/2]).
 %Here we define each node.
 
 %Starts with an id, and the ref to the right node.
@@ -14,40 +15,76 @@ start(Id,Supervisor) -> %spawn something
 
 
 init(Id,Supervisor) -> %STEP B1
+    io:format("Set ~p~n as next.",[Id]),
     set_next(Id,Supervisor).
 
 
 %See if message type really needs to be on the message or if we can fully implement a type of state machine.
 
 active(Id,Supervisor,Next,Max,Phase)->
+    io:format("~p is active ~n",[Id]),
     Next !{Max,Phase,pow(2,Phase)}, % Check this counter thing.
-    receive {Max,Phase,Counter} ->
-        if Id > Max -> 
-            waiting(Id,Supervisor,Next,Id,Phase);
+    io:format("~p sent M1 ~p ~p ~p to ~p ~n",[Id,Max,Phase,pow(2,Phase),Next]),
+    receive {I,P,C} ->
+          if I == Id -> 
+           io:format("~p is the leader. ~n",[Id]);
+        true ->
+        if I > Max -> 
+            waiting(Id,Supervisor,Next,I,C);
         true -> 
             Next ! {Max},
-            passive(Id,Supervisor,Next,Max,Phase)
+            passive(Id,Supervisor,Next,Max,C)
         end
+    end;
+    Msg -> io:format("Could not consume. Got: ~p~n",[Msg])
     end.
     %receive... is on the active state so should only get messages of type M1? There is a simplification here so that we dont need to send the message type. SEE PAPER
     
 waiting(Id,Supervisor,Next,Max,Phase)->
-   receive {Max,Phase,Counter} ->
-       passive(Id,Supervisor,Next,Max,Phase);
+   io:format("~p is waiting ~n",[Id]),
+   receive {I,P,C} ->
+       if I == Id -> 
+           io:format("~p is the leader. ~n",[Id]);
+       true ->
+           passive(Id,Supervisor,Next,Max,Phase)
+        end;
     {Max} ->
+         if Max == Id -> 
+           io:format("~p is the leader. ~n",[Id]);
+       true ->
         active(Id,Supervisor,Next,Max,Phase + 1)
+    end
     end.
     
 passive(Id,Supervisor,Next,Max,Phase)->
-    receive {Max,Phase,Counter} ->
-        if Id >= Max, Counter >= 1 ->
-        {} %If counter > 1 send {i,phase,counter}
+    io:format("~p is passive ~n",[Id]),
+    receive {I,P,C} ->
+         if I == Id -> 
+           io:format("~p is the leader. ~n",[Id]);
+
+        true ->
+        if Id >= I, C >= 1 ->
+         %If counter > 1 send {i,phase,counter}
+        if C > 1 ->
+            	Next !{Id,P,C-1};
+        true ->
+             
+         Next ! {I,P,0},
+         waiting(Id,Supervisor,Next,Max,P)
         end;
+        true -> 
+            Next! {I,P,0}
+        end
+    end;
     {Max} ->
          if Id > Max ->
-          {};
-        true ->  {}
-    end
+          Next !{Max};
+        Id == Max ->
+            io:format("~p is the leader. ~n",[Id]);
+
+        true ->  pass
+    end,
+    passive(Id,Supervisor,Next,Max,Phase)
     end.
 
 set_next(Id,Supervisor) ->

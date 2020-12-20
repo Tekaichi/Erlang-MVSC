@@ -3,7 +3,7 @@ A = node:start(8,Sup),
 B = node:start(5,Sup),
 C = node:start(10,Sup).
 D = node:start(-4,Sup).
-E = node:start(5,Sup).
+E = node:start(6,Sup).
 A ! {node,B}, B ! {node,C}, C ! {node,D}, D ! {node,E}, E ! {node,A}.
 
 

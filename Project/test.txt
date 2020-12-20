@@ -1,7 +1,7 @@
 Sup = node:start(n,n_),
 A = node:start(1,Sup),
-B = node:start(2,Sup),
+B = node:start(62,Sup),
 C = node:start(10,Sup).
-E = node:start(4,Sup).
-D = node:start(5,Sup).
+E = node:start(8,Sup).
+D = node:start(-5,Sup).
 A ! {node,B}, B ! {node,C}, C ! {node,E}, E ! {node,D}, D ! {node,A}.

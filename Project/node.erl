@@ -22,7 +22,7 @@ init(Id,Supervisor) -> %STEP B1
 %See if message type really needs to be on the message or if we can fully implement a type of state machine.
 
 active(Id,Supervisor,Next,Max,Phase)->
-    io:format("~p is active. Sending message next! ~n",[self()]),
+    io:format("~p is active. Sending message next to ~p! ~n",[self(),Next]),
     Next !{Max,Phase,pow(2,Phase)}, % Check this counter thing.
     io:format("~p sent M1 ~p ~p ~p to ~p ~n",[self(),Max,Phase,pow(2,Phase),Next]),
     receive {I,_P,_C} ->
@@ -100,7 +100,7 @@ passive(Id,Supervisor,Next,Max,Phase)->
                 io:format("~p is the leader. ~n",[Id]);
 
          true -> 
-             Next !{M},
+            Next !{M},
             passive(Id,Supervisor,Next,Max,Phase)
         end;
 

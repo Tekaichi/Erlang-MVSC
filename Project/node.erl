@@ -26,17 +26,18 @@ active(Id,Supervisor,Next,Max,Phase)->
     Next !{Max,Phase,pow(2,Phase)}, % Check this counter thing.
     io:format("~p sent M1 ~p ~p ~p to ~p ~n",[self(),Max,Phase,pow(2,Phase),Next]),
     receive {I,_P,C} ->
-          if I == Id -> 
+       if I == Id -> 
            io:format("~p is the leader. ~n",[Id]);
         true ->
-        if I > Max -> 
-            waiting(Id,Supervisor,Next,I,C);
-        true -> 
-            Next ! {Max},
-            passive(Id,Supervisor,Next,Max,C)
-        end
-    end;
-    Msg -> io:format("Active ~p Could not consume. Got: ~p~n",[self(),Msg])
+            if I > Max -> 
+                waiting(Id,Supervisor,Next,I,C);
+            true -> 
+                Next ! {Max},
+                passive(Id,Supervisor,Next,Max,C)
+            end
+        end;
+    Msg -> io:format("Active ~p ~p Could not consume. Got: ~p~n",
+    [Id,self(),Msg]), active(Id,Supervisor,Next,Max,Phase)
 
     end.
     %receive... is on the active state so should only get messages of type M1? There is a simplification here so that we dont need to send the message type. SEE PAPER
@@ -58,7 +59,7 @@ waiting(Id,Supervisor,Next,Max,Phase)->
 
         end;
     Msg -> 
-        io:format("Waiting ~p Could not consume. Got: ~p~n",[self(),Msg])
+        io:format("Waiting ~p ~p Could not consume. Got: ~p~n",[Id,self(),Msg])
     end.
     
 passive(Id,Supervisor,Next,Max,Phase)->
@@ -95,7 +96,7 @@ passive(Id,Supervisor,Next,Max,Phase)->
         end;
 
     Msg -> 
-        io:format("Passive ~p Could not consume. Got: ~p~n",[self(),Msg])
+        io:format("Passive ~p ~p Could not consume. Got: ~p~n",[Id,self(),Msg])
    
    
     end,

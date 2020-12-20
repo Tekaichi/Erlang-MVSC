@@ -25,19 +25,20 @@ active(Id,Supervisor,Next,Max,Phase)->
     io:format("~p is active ~n",[self()]),
     Next !{Max,Phase,pow(2,Phase)}, % Check this counter thing.
     io:format("~p sent M1 ~p ~p ~p to ~p ~n",[self(),Max,Phase,pow(2,Phase),Next]),
-    receive {I,_P,C} ->
+    receive {I,_P,_C} ->
+       io:format("Active: Id: ~p Max: ~p received: ~p~n",[Id,Max,I]),
        if I == Id -> 
            io:format("~p is the leader. ~n",[Id]);
         true ->
             if I > Max -> 
-                waiting(Id,Supervisor,Next,I,C);
+                waiting(Id,Supervisor,Next,I,Phase);
             true -> 
                 Next ! {Max},
-                passive(Id,Supervisor,Next,Max,C)
+                passive(Id,Supervisor,Next,Max,Phase)
             end
         end;
-    Msg -> io:format("Active ~p ~p Could not consume. Got: ~p~n",
-    [Id,self(),Msg]), active(Id,Supervisor,Next,Max,Phase)
+    Msg -> 
+        io:format("Active ~p ~p Could not consume. Got: ~p~n",[Id,self(),Msg])
 
     end.
     %receive... is on the active state so should only get messages of type M1? There is a simplification here so that we dont need to send the message type. SEE PAPER
@@ -55,7 +56,7 @@ waiting(Id,Supervisor,Next,Max,Phase)->
         if Id == M ->     
             io:format("~p ~p is the leader. ~n",[Id,self()]);
         true ->
-        active(Id,Supervisor,Next,Max,Phase + 1)    
+            active(Id,Supervisor,Next,Max,Phase + 1)
 
         end;
     Msg -> 
@@ -79,7 +80,8 @@ passive(Id,Supervisor,Next,Max,Phase)->
                     waiting(Id,Supervisor,Next,Max,P)
                  end;
             true ->
-                 Next! {I,P,0}
+                 Next! {I,P,0},
+                 passive(Id,Supervisor,Next,Max,Phase)
            
             end
     
@@ -88,19 +90,19 @@ passive(Id,Supervisor,Next,Max,Phase)->
         io:format("~p M2 ~p ~n",[self(),M]),
         if 
             M > Max ->
-                Next !{M};
+                Next !{M},
+                passive(Id,Supervisor,Next,Max,Phase);
             Id == M ->
                 io:format("~p is the leader. ~n",[Id]);
 
-        true ->  pass
+        true ->  passive(Id,Supervisor,Next,Max,Phase)
         end;
 
     Msg -> 
         io:format("Passive ~p ~p Could not consume. Got: ~p~n",[Id,self(),Msg])
    
-   
-    end,
-    passive(Id,Supervisor,Next,Max,Phase).
+    end.
+    
 
 set_next(Id,Supervisor) ->
     receive{node,Next}->

@@ -22,11 +22,10 @@ init(Id,Supervisor) -> %STEP B1
 %See if message type really needs to be on the message or if we can fully implement a type of state machine.
 
 active(Id,Supervisor,Next,Max,Phase)->
-    io:format("~p is active ~n",[self()]),
+    io:format("~p is active. Sending message next! ~n",[self()]),
     Next !{Max,Phase,pow(2,Phase)}, % Check this counter thing.
     io:format("~p sent M1 ~p ~p ~p to ~p ~n",[self(),Max,Phase,pow(2,Phase),Next]),
     receive {I,_P,_C} ->
-       io:format("Active: Id: ~p Max: ~p received: ~p~n",[Id,Max,I]),
        if I == Id -> 
            io:format("~p is the leader. ~n",[Id]);
         true ->
@@ -55,8 +54,12 @@ waiting(Id,Supervisor,Next,Max,Phase)->
         %This m should be equal to max
         if Id == M ->     
             io:format("~p ~p is the leader. ~n",[Id,self()]);
+         M == Max ->  
+            io:format("Waiting ~p == ~p ~n",[M,Max]),
+
+            active(Id,Supervisor,Next,Max,Phase + 1);
         true ->
-            active(Id,Supervisor,Next,Max,Phase + 1)
+            waiting(Id,Supervisor,Next,Max,Phase)
 
         end;
     Msg -> 
@@ -89,13 +92,16 @@ passive(Id,Supervisor,Next,Max,Phase)->
     {M} ->
         io:format("~p M2 ~p ~n",[self(),M]),
         if 
-            M > Max ->
-                Next !{M},
-                passive(Id,Supervisor,Next,Max,Phase);
+            M  < Max ->
+            io:format("~p skipping.~n",[self()]),
+             passive(Id,Supervisor,Next,Max,Phase);
+              
             Id == M ->
                 io:format("~p is the leader. ~n",[Id]);
 
-        true ->  passive(Id,Supervisor,Next,Max,Phase)
+         true -> 
+             Next !{M},
+            passive(Id,Supervisor,Next,Max,Phase)
         end;
 
     Msg -> 

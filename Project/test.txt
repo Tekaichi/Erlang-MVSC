@@ -1,12 +1,20 @@
 Sup = node:start(n,n_),
-A = node:start(1,Sup),
-B = node:start(11,Sup),
+A = node:start(8,Sup),
+B = node:start(5,Sup),
 C = node:start(10,Sup).
-E = node:start(4,Sup).
-D = node:start(5,Sup).
-A ! {node,B}, B ! {node,C}, C ! {node,E}, E ! {node,D}, D ! {node,A}.
+D = node:start(-4,Sup).
+E = node:start(5,Sup).
+A ! {node,B}, B ! {node,C}, C ! {node,D}, D ! {node,E}, E ! {node,A}.
 
 
 
 
 
+
+1,11,10,4,5
+5,11,11,10,5,
+5,11,11,11,10,
+10,11,11,11,11
+11,11,11,11,11
+
+1A,11A,10A,4A,5A

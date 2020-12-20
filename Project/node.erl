@@ -45,16 +45,18 @@ waiting(Id,Supervisor,Next,Max,Phase)->
    io:format("~p is waiting ~n",[self()]),
    receive {I,_P,_C} ->
        if I == Id -> 
-           io:format("~p is the leader. ~n",[Id]);
+           io:format("~p ~p is the leader. ~n",[Id,self()]);
        true ->
            passive(Id,Supervisor,Next,Max,Phase)
         end;
-    {_M} ->
+    {M} ->
         %This m should be equal to max
-        active(Id,Supervisor,Next,Max,Phase + 1),           
-        io:format("~p is the leader. ~n",[Id]);
+        if Id == M ->     
+            io:format("~p ~p is the leader. ~n",[Id,self()]);
+        true ->
+        active(Id,Supervisor,Next,Max,Phase + 1)    
 
-   
+        end;
     Msg -> 
         io:format("Waiting ~p Could not consume. Got: ~p~n",[self(),Msg])
     end.
@@ -67,7 +69,7 @@ passive(Id,Supervisor,Next,Max,Phase)->
             io:format("~p is the leader. ~n",[Id]);
 
         true ->
-            if I >= Max, C >= 1 ->
+            if (I >= Max) and (C >= 1) ->
          %If counter > 1 send {i,phase,counter}
                 if C > 1 ->
             	    Next !{I,P,C-1};

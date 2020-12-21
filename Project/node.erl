@@ -22,9 +22,8 @@ init(Id,Supervisor) -> %STEP B1
 %See if message type really needs to be on the message or if we can fully implement a type of state machine.
 
 active(Id,Supervisor,Next,Max,Phase)->
-    io:format("~p is active. Sending message next to ~p! ~n",[self(),Next]),
+    io:format("~p ~p is active. ~n",[self(),Id]),
     Next !{Max,Phase,pow(2,Phase)}, % Check this counter thing.
-    io:format("~p sent M1 ~p ~p ~p to ~p ~n",[self(),Max,Phase,pow(2,Phase),Next]),
     receive {I,_P,_C} ->
        if I == Id -> 
            io:format("~p is the leader. ~n",[Id]);
@@ -43,7 +42,7 @@ active(Id,Supervisor,Next,Max,Phase)->
     %receive... is on the active state so should only get messages of type M1? There is a simplification here so that we dont need to send the message type. SEE PAPER
     
 waiting(Id,Supervisor,Next,Max,Phase)->
-   io:format("~p is waiting ~n",[self()]),
+   io:format("~p ~p is waiting. ~n",[self(),Id]),
    receive {I,_P,_C} ->
        if I == Id -> 
            io:format("~p ~p is the leader. ~n",[Id,self()]);
@@ -55,10 +54,11 @@ waiting(Id,Supervisor,Next,Max,Phase)->
         if Id == M ->     
             io:format("~p ~p is the leader. ~n",[Id,self()]);
          M == Max ->  
-            io:format("Waiting ~p == ~p ~n",[M,Max]),
+            
 
             active(Id,Supervisor,Next,Max,Phase + 1);
         true ->
+            io:format("Waiting ~p != ~p ~n",[M,Max]),
             waiting(Id,Supervisor,Next,Max,Phase)
 
         end;
@@ -67,7 +67,8 @@ waiting(Id,Supervisor,Next,Max,Phase)->
     end.
     
 passive(Id,Supervisor,Next,Max,Phase)->
-    io:format("~p is passive ~n",[self()]),
+    io:format("~p ~p is passive. ~n",[self(),Id]),
+
     receive
      {I,P,C} ->
         if I == Id -> 
@@ -77,10 +78,12 @@ passive(Id,Supervisor,Next,Max,Phase)->
             if (I >= Max) and (C >= 1) ->
          %If counter > 1 send {i,phase,counter}
                 if C > 1 ->
-            	    Next !{I,P,C-1};
+            	    Next !{I,P,C-1},
+                    passive(Id,Supervisor,Next,Max,Phase);
+                
                 true -> %When C == 1
                     Next ! {I,P,0},
-                    waiting(Id,Supervisor,Next,Max,P)
+                    waiting(Id,Supervisor,Next,I,P)
                  end;
             true ->
                  Next! {I,P,0},
@@ -90,10 +93,10 @@ passive(Id,Supervisor,Next,Max,Phase)->
     
         end;
     {M} ->
-        io:format("~p M2 ~p ~n",[self(),M]),
+       
         if 
             M  < Max ->
-            io:format("~p skipping.~n",[self()]),
+             io:format("~p skipping.~n",[self()]),
              passive(Id,Supervisor,Next,Max,Phase);
               
             Id == M ->
@@ -112,7 +115,11 @@ passive(Id,Supervisor,Next,Max,Phase)->
 
 set_next(Id,Supervisor) ->
     receive{node,Next}->
-        active(Id,Supervisor,Next,Id,0)
+        io:format("~p -> ~p~n",[self(),Next]),
+        active(Id,Supervisor,Next,Id,0);
+
+    Msg ->  io:format("Unconnected ~p ~p Could not consume. Got: ~p~n",[Id,self(),Msg])
+      
     end.
 
 

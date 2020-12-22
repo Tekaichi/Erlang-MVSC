@@ -10,12 +10,16 @@
 %Define a method for each state (?)
 
 
+leader(Id)->
+    io:format("~p is the leader. ~n",[Id]),
+    exit(leader).
+
 start(Id,Supervisor) -> %spawn something
   spawn(?MODULE,init,[Id,Supervisor]).
 
 
 init(Id,Supervisor) -> %STEP B1
-    io:format("Set ~p~n as next.",[Id]),
+    io:format("Spawned ~p with ~p ~n.",[Id,self()]),
     set_next(Id,Supervisor).
 
 
@@ -23,10 +27,11 @@ init(Id,Supervisor) -> %STEP B1
 
 active(Id,Supervisor,Next,Max,Phase)->
     io:format("~p ~p is active. ~n",[self(),Id]),
-    Next !{Max,Phase,pow(2,Phase)}, % Check this counter thing.
+    Next !{Max,Phase,pow(2,Phase)},
+    io:format("~p {M1} -> ~p~n",[self(),Next]),
     receive {I,_P,_C} ->
        if I == Id -> 
-           io:format("~p is the leader. ~n",[Id]);
+          leader(Id);
         true ->
             if I > Max -> 
                 waiting(Id,Supervisor,Next,I,Phase);
@@ -45,7 +50,7 @@ waiting(Id,Supervisor,Next,Max,Phase)->
    io:format("~p ~p is waiting. ~n",[self(),Id]),
    receive {I,_P,_C} ->
        if I == Id -> 
-           io:format("~p ~p is the leader. ~n",[Id,self()]);
+         leader(Id);
        true ->
            passive(Id,Supervisor,Next,Max,Phase)
         end;
@@ -55,7 +60,6 @@ waiting(Id,Supervisor,Next,Max,Phase)->
             io:format("~p ~p is the leader. ~n",[Id,self()]);
          M == Max ->  
             
-
             active(Id,Supervisor,Next,Max,Phase + 1);
         true ->
             io:format("Waiting ~p != ~p ~n",[M,Max]),
@@ -72,13 +76,15 @@ passive(Id,Supervisor,Next,Max,Phase)->
     receive
      {I,P,C} ->
         if I == Id -> 
-            io:format("~p is the leader. ~n",[Id]);
+            leader(Id);
 
         true ->
             if (I >= Max) and (C >= 1) ->
          %If counter > 1 send {i,phase,counter}
                 if C > 1 ->
             	    Next !{I,P,C-1},
+                    io:format("~p {M1} -> ~p~n",[self(),Next]),
+
                     passive(Id,Supervisor,Next,Max,Phase);
                 
                 true -> %When C == 1
@@ -100,7 +106,7 @@ passive(Id,Supervisor,Next,Max,Phase)->
              passive(Id,Supervisor,Next,Max,Phase);
               
             Id == M ->
-                io:format("~p is the leader. ~n",[Id]);
+                leader(Id);
 
          true -> 
             Next !{M},
@@ -116,10 +122,7 @@ passive(Id,Supervisor,Next,Max,Phase)->
 set_next(Id,Supervisor) ->
     receive{node,Next}->
         io:format("~p -> ~p~n",[self(),Next]),
-        active(Id,Supervisor,Next,Id,0);
-
-    Msg ->  io:format("Unconnected ~p ~p Could not consume. Got: ~p~n",[Id,self(),Msg])
-      
+        active(Id,Supervisor,Next,Id,0)      
     end.
 
 

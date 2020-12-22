@@ -1,57 +1,64 @@
 -module(monitor).
 
--export([init/0,monitor_init/0]).
+-export([init/1,monitor_init/1,create_nodes/2]).
 
 -import(buffer,[start/1]).
 
 
-%Starts the monitor.
-init() ->
+%Receives a list of ids and creates the ring in that order.
+init(List) ->
     
-   spawn(?MODULE,monitor_init,[]).
+   spawn(?MODULE,monitor_init,[List]).
    
 
 
 
-monitor_init() -> 
+create_nodes(List,Nodes) -> 
+    case List of
+        []-> Nodes;
+        _ ->
+    PID =node:start(hd(List),self()),
+    monitor(process,PID),
+    [PID | create_nodes(tl(List),Nodes)]
+end.
+    
+%Recursively sets the neighbor up until Node N-1, returning Node N.
+set_next(Nodes) ->
+    Next = hd(tl(Nodes)),
+    hd(Nodes) ! {node,Next},
+    if  length(Nodes) ==2 ->
+    Next;
+    true -> 
+    set_next(tl(Nodes))
+end.
+
+monitor_init(List) -> 
 	
 	io:format("Starting Ring...~n"),
     %Starts buffer with size Size
 
     %Starts nodes.
+    Nodes = create_nodes(List,[]),
 
-    A = node:start(4,self()),
-    monitor(process,A),
-    B = node:start(12,self()),
-    monitor(process,B),
+    Last = set_next(Nodes), 
+    Last ! {node, hd(Nodes)}, %Sets 0 node as next of N node. 
 
-    C = node:start(24,self()),
-    monitor(process,C),
-
-    D = node:start(-3,self()),
-    monitor(process,D),
-
-    E = node:start(23,self()),
-    monitor(process,E),
-
-    A ! {node,B}, B ! {node,C}, C ! {node,D}, D ! {node,E}, E ! {node,A},
+	io:format("Starting monitoring..~n"),
+    monitor_loop(List).
 
 
 
-
-
-    %Makes this processa a monitor
-
-	io:format("Started Monitoring Node Ring..~n"),
-    monitor_loop().
-
-
-
-monitor_loop() -> 	
+monitor_loop(List) -> 	
     receive
     {'DOWN', _Ref, process, Pid, Why} ->
         io:format("~p died because ~p~n",[Pid,Why]),
-        % Restart buffer.
-       monitor_loop
-      
+        % Restart ring if why != leader, else shut down everything.
+        if Why == leader ->
+            io:format("Success. ~p~n",[List]);
+
+           
+            true-> monitor_init(List)
+        end
+  
+       
     end.

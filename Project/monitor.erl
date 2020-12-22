@@ -43,7 +43,8 @@ monitor_init(List) ->
     Last = set_next(Nodes), 
     Last ! {node, hd(Nodes)}, %Sets 0 node as next of N node. 
 
-	io:format("Starting monitoring..~n"),
+	
+
     monitor_loop(List).
 
 
@@ -51,13 +52,19 @@ monitor_init(List) ->
 monitor_loop(List) -> 	
     receive
     {'DOWN', _Ref, process, Pid, Why} ->
-        io:format("~p died because ~p~n",[Pid,Why]),
+        %io:format("~p died because ~p~n",[Pid,Why]),
         % Restart ring if why != leader, else shut down everything.
-        if Why == leader ->
-            io:format("Success. ~p~n",[List]);
-
-           
-            true-> monitor_init(List)
+        case Why of
+            {leader,Id} -> 
+            io:format("Success. Found leader ~p of ~p ~n",[Id,List]),
+            exit(kill);
+            
+            normal ->
+                io:format("Shutted down. ~p~n",[Pid]);
+            _-> 
+                io:format("Something went wrong. Rebooting ~p~n",[List]),
+                init(List),
+                exit(kill)
         end
   
        

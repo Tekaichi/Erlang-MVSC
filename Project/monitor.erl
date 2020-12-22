@@ -57,6 +57,7 @@ monitor_loop(List) ->
         case Why of
             {leader,Id} -> 
             io:format("Success. Found leader ~p of ~p ~n",[Id,List]),
+            %Send to all processes that a leader was found?
             exit(kill);
             
             normal ->

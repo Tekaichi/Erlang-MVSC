@@ -11,7 +11,7 @@
 
 
 leader(Id,Next)->
-    Next ! {ok},
+    Next ! {leader,Id},
     exit({leader,Id}).
 
 start(Id,Supervisor) -> %spawn something
@@ -30,17 +30,15 @@ active(Id,Supervisor,Next,Max,Phase)->
     Next !{Max,Phase,pow(2,Phase)},
     %io:format("~p {M1} -> ~p~n",[self(),Next]),
     receive {I,_P,_C} ->
-       if I == Id -> 
-          leader(Id,Next);
-        true ->
-            if I > Max -> 
-                waiting(Id,Supervisor,Next,I,Phase);
-            true -> 
-                Next ! {Max},
-                %io:format("~p {M2} -> ~p~n",[self(),Next]),
-                passive(Id,Supervisor,Next,Max,Phase)
-            end
+    
+        if I > Max -> 
+            waiting(Id,Supervisor,Next,I,Phase);
+        true -> 
+            Next ! {Max},
+            %io:format("~p {M2} -> ~p~n",[self(),Next]),
+            passive(Id,Supervisor,Next,Max,Phase)
         end;
+        
     Msg -> 
         %io:format("Active ~p ~p Could not consume. Got: ~p~n",[Id,self(),Msg])
         Msg
@@ -50,82 +48,93 @@ active(Id,Supervisor,Next,Max,Phase)->
     
 waiting(Id,Supervisor,Next,Max,Phase)->
    %io:format("~p ~p is waiting. ~n",[self(),Id]),
-   receive {I,P,C} ->
-       if I == Id -> 
-         leader(Id,Next);
-       true ->
-           self() ! {I,P,C},
-           passive(Id,Supervisor,Next,Max,Phase)
-        end;
-    {M} ->
-        %This m should be equal to max
-        if Id == M ->     
+   case 
+       is_process_alive(Next) of 
+           true ->
+    receive {I,P,C} ->
+        if I == Id -> 
             leader(Id,Next);
-        
-         M == Max ->  
-            
-            active(Id,Supervisor,Next,Max,Phase + 1);
         true ->
-            %io:format("ERROR: Waiting ~p != ~p ~n",[M,Max]),
-            exit(error)
+            self() ! {I,P,C},
+            passive(Id,Supervisor,Next,Max,Phase)
+            end;
+        {M} ->
+            %This m should be equal to max
+            if Id == M ->     
+                leader(Id,Next);
+            
+            M == Max ->  
+                
+                active(Id,Supervisor,Next,Max,Phase + 1);
+            true ->
+                %io:format("ERROR: Waiting ~p != ~p ~n",[M,Max]),
+                exit(error)
 
+            end;
+        Msg -> 
+            %io:format("Waiting ~p ~p Could not consume. Got: ~p~n",[Id,self(),Msg])
+            Msg
         end;
-    Msg -> 
-        %io:format("Waiting ~p ~p Could not consume. Got: ~p~n",[Id,self(),Msg])
-        Msg
+    false -> 
+        io:format("~p says ~p is leader.~n",[Id,Max])
     end.
     
 passive(Id,Supervisor,Next,Max,Phase)->
     %io:format("~p ~p is passive. ~n",[self(),Id]),
-
-    receive
-     {I,P,C} ->
-        if I == Id -> 
-            leader(Id,Next);
-
+    case 
+    is_process_alive(Next) of 
         true ->
-            if (I >= Max) and (C >= 1) ->
-         %If counter > 1 send {i,phase,counter}
-                if C > 1 ->
-            	    Next !{I,P,C-1},
-                    %io:format("~p {M1} -> ~p~n",[self(),Next]),
-
-                    passive(Id,Supervisor,Next,Max,Phase);
-                
-                true -> %When C == 1
-                    Next ! {I,P,0},
-                    %io:format("~p {M1} -> ~p~n",[self(),Next]),
-                    waiting(Id,Supervisor,Next,I,P)
-                 end;
-            true ->
-                 Next! {I,P,0},
-                %io:format("~p {M1} -> ~p~n",[self(),Next]),
-                 passive(Id,Supervisor,Next,Max,Phase)
-           
-            end
-    
-        end;
-    {M} ->
-       
-        if 
-            M  < Max ->
-             %io:format("~p skipping.~n",[self()]),
-             passive(Id,Supervisor,Next,Max,Phase);
-              
-            Id == M ->
+        receive
+        {I,P,C} ->
+            if I == Id -> 
                 leader(Id,Next);
 
-         true -> 
-            %io:format("~p {M2} -> ~p~n",[self(),Next]),
-            Next !{M},
-            passive(Id,Supervisor,Next,Max,Phase)
-        end;
+            true ->
+                if (I >= Max) and (C >= 1) ->
+            %If counter > 1 send {i,phase,counter}
+                    if C > 1 ->
+                        Next !{I,P,C-1},
+                        %io:format("~p {M1} -> ~p~n",[self(),Next]),
 
-    Msg -> 
-        %io:format("Passive ~p ~p Could not consume. Got: ~p~n",[Id,self(),Msg])
-        Msg
-   
-    end.
+                        passive(Id,Supervisor,Next,Max,Phase);
+                    
+                    true -> %When C == 1
+                        Next ! {I,P,0},
+                        %io:format("~p {M1} -> ~p~n",[self(),Next]),
+                        waiting(Id,Supervisor,Next,I,P)
+                    end;
+                true ->
+                    Next! {I,P,0},
+                    %io:format("~p {M1} -> ~p~n",[self(),Next]),
+                    passive(Id,Supervisor,Next,Max,Phase)
+            
+                end
+        
+            end;
+        {M} ->
+        
+            if 
+                M  < Max ->
+                %io:format("~p skipping.~n",[self()]),
+                passive(Id,Supervisor,Next,Max,Phase);
+                
+                Id == M ->
+                    leader(Id,Next);
+
+            true -> 
+                %io:format("~p {M2} -> ~p~n",[self(),Next]),
+                Next !{M},
+                passive(Id,Supervisor,Next,Max,Phase)
+            end;
+
+        Msg -> 
+            %io:format("Passive ~p ~p Could not consume. Got: ~p~n",[Id,self(),Msg])
+            Msg
+    
+        end;
+    false -> 
+        io:format("~p says ~p is leader.~n",[Id,Max])
+end.
     
 %Sets neighbour.
 set_next(Id,Supervisor) ->
@@ -133,6 +142,7 @@ set_next(Id,Supervisor) ->
         %io:format("~p -> ~p~n",[self(),Next]),
         active(Id,Supervisor,Next,Id,0)      
     end.
+
 
 
 

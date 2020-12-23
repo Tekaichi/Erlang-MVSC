@@ -34,7 +34,7 @@ active(Id,Supervisor,Next,Max,Phase)->
         {leader,M} ->     
             if M == Max ->
            Next ! {leader,M}, io:format("~p says ~p is the leader.~n",[Id,M]);
-           true -> io:format("~p does not agree with ~p has leader",[Id,M])
+           true -> io:format("~p does not agree with ~p as leader. Leader:~p~n",[Id,M,Max]), exit(kill)
                end;
         {I,_P,_C} ->
     
@@ -65,7 +65,7 @@ waiting(Id,Supervisor,Next,Max,Phase)->
        {leader,M} -> 
            if M == Max ->
            Next ! {leader,M}, io:format("~p says ~p is the leader.~n",[Id,M]);
-           true -> io:format("~p does not agree with ~p has leader",[Id,M])
+           true -> io:format("~p does not agree with ~p as leader. Leader:~p~n",[Id,M,Max]), exit(kill)
                end;
         {I,P,C} ->
       
@@ -95,7 +95,7 @@ passive(Id,Supervisor,Next,Max,Phase)->
     {leader,M} ->     
         if M == Max ->
            Next ! {leader,M}, io:format("~p says ~p is the leader.~n",[Id,M]);
-           true -> io:format("~p does not agree with ~p has leader",[Id,M])
+           true -> io:format("~p does not agree with ~p as leader. Leader:~p~n",[Id,M,Max]), exit(kill)
                end;
      {I,P,C} ->
          
@@ -132,7 +132,7 @@ passive(Id,Supervisor,Next,Max,Phase)->
          true -> 
             %io:format("~p {M2} -> ~p~n",[self(),Next]),
             Next !{M},
-            passive(Id,Supervisor,Next,Max,Phase)
+            passive(Id,Supervisor,Next,M,Phase)
         end;
 
     Msg -> 
